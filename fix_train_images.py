@@ -23,7 +23,10 @@ from pprint import pprint
 
 from request_retry import requests_retry_session
 
+# put data out of pycharm path (indexing takes a long time)
 os.chdir("/home/orion/datasets/iMaterialist")
+
+data_dir = "/home/orion/datasets/iMaterialist_data"
 
 #requests.adapters.DEFAULT_RETRIES = 5
 
@@ -32,6 +35,9 @@ class Data(object):
 
     def __init__(self):
         self
+
+        self.supported_extensions = [',jpg', '.GIF' , '.PNG', 'jpg', '.bmp', '.jpg', '.png', 'jpeg', '.gif', '.JPG',
+                                     '.SS2', '/jpg', 'JPEG']
 
     def read_input_data_file(self):
 
@@ -75,11 +81,8 @@ class Data(object):
             else:
                 file_extension_type[extension] += 1
 
-        for key,values in file_extension_type.items():
+        for key, values in file_extension_type.items():
             print('number of times ' + str(key) + ' appeared ' + str(values))
-
-
-
 
 
 
@@ -87,9 +90,9 @@ class Data(object):
     def replace_with_actual_filename(self, train_json, labels, file_path):
         # Extract name in file and compare with actual filename
 
-        for label in labels:
+        for label in range(73, 129):
             # construct directory path
-            label_directory = os.path.join(file_path, 'data', 'train_images', str(label))
+            label_directory = os.path.join(data_dir, 'data', 'train_images', str(label))
             print(label_directory)
 
             for root, dirs, files in os.walk(label_directory):
@@ -97,6 +100,7 @@ class Data(object):
                 for file in files:
 
                     print(file)
+                    print(root, dirs, files)
                     index = int(str(file).split('.')[0])
 
                     url = train_json['images'][index]['url']
@@ -104,12 +108,25 @@ class Data(object):
                     # not all images end with jpg (extract image extension from url)
                     label_id = train_json['annotations'][index]['label_id']
 
-                    correct_file_name = str(label) + '_' + str(index) + '.' + str(url[0]).split('.')[-1]
-                    print(correct_file_name)
-                    print(url, image_id, label_id)
-                    print(os.path.join(label_directory, file))
-                    print(os.path.join(label_directory, correct_file_name))
-                    os.rename(os.path.join(label_directory, file), os.path.join(label_directory, correct_file_name))
+                    image_extension_from_url = str(url[0])[-4:]
+
+                    print(image_extension_from_url)
+
+
+                    if image_extension_from_url in self.supported_extensions:
+
+                        correct_file_name = str(label) + '_' + str(index) + '.' + image_extension_from_url
+                        print(correct_file_name)
+                        print(url, image_id, label_id)
+                        print(os.path.join(label_directory, file))
+                        print(os.path.join(label_directory, correct_file_name))
+
+                        try:
+                            os.rename(os.path.join(label_directory, file), os.path.join(label_directory, correct_file_name))
+
+                        except:
+                            continue
+
 
 
             '''
@@ -124,6 +141,6 @@ if __name__ == '__main__':
     obj = Data()
     train_json, test_json, validation_json, labels, file_path = obj.read_input_data_file()
 
-    obj.collect_all_file_extensions(train_json)
+    #obj.collect_all_file_extensions(train_json)
 
-    #obj.replace_with_actual_filename(train_json, labels, file_path)
+    obj.replace_with_actual_filename(train_json, labels, file_path)
