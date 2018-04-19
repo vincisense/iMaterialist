@@ -6,6 +6,7 @@ import sys
 import imghdr
 import pandas as pd
 
+import numpy as np
 import random
 
 import argparse
@@ -212,9 +213,8 @@ class CountImages(object):
 
                     print(files)
 
-                    random_samples_chosen = random.sample(files, more_samples_needed)
+                    random_samples_chosen = np.random.choice(files, more_samples_needed)
                     print(random_samples_chosen)
-
 
                     # for regular files
                     for file in files:
@@ -228,7 +228,7 @@ class CountImages(object):
                         elif int(color.size) > 100:
                             img = cv2.cvtColor(color.copy(), cv2.COLOR_BGR2RGB)
 
-                        new_file_name = file.split('.')[0] + '_gs' + '.jpg'
+                        new_file_name = file.split('.')[0] + '_gs' + '.jpeg'
                         outputpath = os.path.join(dir_path, new_file_name)
                         print(outputpath)
                         print(new_file_name)
@@ -257,8 +257,6 @@ class CountImages(object):
                         im_gray_size = ImageOps.fit(im_new.copy(), (64, 64), Image.ANTIALIAS)
                         im_gray_size.save(outputpath)
 
-                        #### Here you can clip the image 'im_gray' matrix, just delete any side row or column
-                        # im = pix[200:-200, 200:-200]
 
                     # for regular files
                     for file in random_samples_chosen:
@@ -272,7 +270,8 @@ class CountImages(object):
                         elif int(color.size) > 100:
                             img = cv2.cvtColor(color.copy(), cv2.COLOR_BGR2RGB)
 
-                        new_file_name = file.split('.')[0] + '_gs' + '.jpg'
+                        # converted grey scale
+                        new_file_name = file.split('.')[0] + '_cgs' + '.jpeg'
                         outputpath = os.path.join(dir_path, new_file_name)
                         print(outputpath)
                         print(new_file_name)
@@ -289,10 +288,12 @@ class CountImages(object):
 
                         if pix.shape[0] == pix.shape[1]:
                             #### Here you can clip the image 'im_gray' matrix, just delete any side row or column
-                            pix = pix[100:-100, 100:-100]
+                            pix = pix[50:-50, 50:-50]
                         else:
-                            edge_removed = int(float(pix.shape[0])/float(pix.shape[1])) * 10
+                            edge_removed = int(float(pix.shape[0])/float(pix.shape[1]) * 10)
+                            print(edge_removed)
                             pix = pix[edge_removed:-edge_removed, edge_removed:-edge_removed]
+                            print(pix.shape)
 
                         # im_new = np.array(im.copy(), dtype='f')
                         # im_new = Image.fromarray(im)
@@ -308,9 +309,52 @@ class CountImages(object):
                         im_gray_size = ImageOps.fit(im_new.copy(), (64, 64), Image.ANTIALIAS)
                         im_gray_size.save(outputpath)
 
+                    for file in files:
+                        imagefilepath = os.path.join(dir_path, file)
+                        os.remove(imagefilepath)
 
+                else:
 
+                    # for regular files
+                    for file in files:
+                        imagefilepath = os.path.join(dir_path, file)
+                        print(imagefilepath)
+                        color = cv2.imread(imagefilepath)
+                        # If opencv doesnt works due to unusual image file extension try other library (google check)
 
+                        if color is None:
+                            continue
+                        elif int(color.size) > 100:
+                            img = cv2.cvtColor(color.copy(), cv2.COLOR_BGR2RGB)
+
+                        new_file_name = file.split('.')[0] + '_gs' + '.jpeg'
+                        outputpath = os.path.join(dir_path, new_file_name)
+                        print(outputpath)
+                        print(new_file_name)
+
+                        im_gray = Image.fromarray(cv2.cvtColor(img.copy(), cv2.COLOR_RGB2GRAY))
+
+                        print(type(im_gray))
+                        pix = np.array(im_gray)
+                        print(pix)
+                        print(pix.ndim)
+                        print(pix.shape)
+                        print(pix.shape[0])
+                        print(pix.shape[1])
+
+                        # im_new = np.array(im.copy(), dtype='f')
+                        # im_new = Image.fromarray(im)
+
+                        # pix_new = np.array(im_new)
+                        # print(pix_new)
+                        # print(pix_new.ndim)
+                        # print(pix_new.shape)
+
+                        # pix = np.array(pix.copy(), dtype='f')
+                        im_new = Image.fromarray(pix)
+                        print(im_new)
+                        im_gray_size = ImageOps.fit(im_new.copy(), (64, 64), Image.ANTIALIAS)
+                        im_gray_size.save(outputpath)
 
 def main():
     obj = CountImages()
