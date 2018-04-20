@@ -7,6 +7,7 @@ import imghdr
 import pandas as pd
 
 import numpy as np
+import shutil
 import random
 
 import argparse
@@ -189,6 +190,8 @@ class CountImages(object):
 
             for dir in dirs:
 
+                print(os.path.join(file_path, dir))
+
                 print(dir)
                 print(str(file_counter_dict[int(dir)]))
                 print('max samples in any class is ' + str(max))
@@ -288,7 +291,8 @@ class CountImages(object):
 
                         if pix.shape[0] == pix.shape[1]:
                             #### Here you can clip the image 'im_gray' matrix, just delete any side row or column
-                            pix = pix[50:-50, 50:-50]
+                            edge_removed = int(float(pix.shape[0])/ float(8))
+                            pix = pix[edge_removed:-edge_removed, edge_removed:-edge_removed]
                         else:
                             edge_removed = int(float(pix.shape[0])/float(pix.shape[1]) * 10)
                             print(edge_removed)
@@ -341,20 +345,16 @@ class CountImages(object):
                         print(pix.shape)
                         print(pix.shape[0])
                         print(pix.shape[1])
-
-                        # im_new = np.array(im.copy(), dtype='f')
-                        # im_new = Image.fromarray(im)
-
-                        # pix_new = np.array(im_new)
-                        # print(pix_new)
-                        # print(pix_new.ndim)
-                        # print(pix_new.shape)
-
-                        # pix = np.array(pix.copy(), dtype='f')
                         im_new = Image.fromarray(pix)
                         print(im_new)
                         im_gray_size = ImageOps.fit(im_new.copy(), (64, 64), Image.ANTIALIAS)
                         im_gray_size.save(outputpath)
+
+                #os.makedirs(os.path.join("/home/orion/datasets/iMaterialist_data_new/data/train_images_done", dir))
+                # copy converted directory to new location
+                shutil.copytree(os.path.join(file_path, dir),
+                                os.path.join("/home/orion/datasets/iMaterialist_data_new/data/train_images_done", dir))
+
 
 def main():
     obj = CountImages()
