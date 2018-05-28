@@ -1,17 +1,15 @@
 import os
-import numpy as np
 import cv2
 from PIL import Image, ImageOps, ImageFile
 import sys
 import imghdr
 import pandas as pd
-
-import numpy as np
 import shutil
-import random
-
+import numpy as np
 import argparse
 import csv
+import random
+
 
 class FileRename(object):
 
@@ -73,7 +71,7 @@ class ImageValid(object):
                         valid_images.set_value(valid_images_index, 'valid_image_name', str(file))
                         valid_images_index += 1
 
-        valid_images.to_csv("/home/orion/datasets/iMaterialist_data_new/data/output_images.csv")
+        valid_images.to_csv("/media/orion/306820f3-b14d-4713-9670-5ec03229fcd1/datasets/iMaterialist_last/data/output_images.csv")
 
     def option1(self, file_path):
 
@@ -167,7 +165,7 @@ class CountImages(object):
                         min_samples = values
                         min_samples_class = int(key)
 
-        class_samples.to_csv(os.path.join(file_path, 'class_samples.csv'))
+        class_samples.to_csv(os.path.join(file_path, 'class_samples.csv'), index=False)
 
         return file_counter, class_samples, max_samples, max_samples_class, min_samples, min_samples_class
 
@@ -175,6 +173,10 @@ class CountImages(object):
 
         max = 3898
         min = 320
+
+        # count how many total over-sample images are generated
+        # global counter
+        oversample_counter = 0
 
         file_counter_dict = dict()
 
@@ -219,7 +221,7 @@ class CountImages(object):
                     random_samples_chosen = np.random.choice(files, more_samples_needed)
                     print(random_samples_chosen)
 
-                    # for regular files
+                    # first convert the main files as is
                     for file in files:
                         imagefilepath = os.path.join(dir_path, file)
                         print(imagefilepath)
@@ -232,6 +234,7 @@ class CountImages(object):
                             img = cv2.cvtColor(color.copy(), cv2.COLOR_BGR2RGB)
 
                         new_file_name = file.split('.')[0] + '_gs' + '.jpeg'
+
                         outputpath = os.path.join(dir_path, new_file_name)
                         print(outputpath)
                         print(new_file_name)
@@ -261,7 +264,7 @@ class CountImages(object):
                         im_gray_size.save(outputpath)
 
 
-                    # for regular files
+                    # over-sample the rest number of needed files
                     for file in random_samples_chosen:
                         imagefilepath = os.path.join(dir_path, file)
                         print(imagefilepath)
@@ -273,8 +276,10 @@ class CountImages(object):
                         elif int(color.size) > 100:
                             img = cv2.cvtColor(color.copy(), cv2.COLOR_BGR2RGB)
 
-                        # converted grey scale
-                        new_file_name = file.split('.')[0] + '_cgs' + '.jpeg'
+                        # converted grey scale (add a counter to each new oversampled file)
+                        new_file_name = file.split('.')[0] + '_' + str(oversample_counter) + '_cgs' + '.jpeg'
+                        oversample_counter +=1
+
                         outputpath = os.path.join(dir_path, new_file_name)
                         print(outputpath)
                         print(new_file_name)
@@ -318,7 +323,7 @@ class CountImages(object):
                         os.remove(imagefilepath)
 
                 else:
-
+                    # if it already has max number of files
                     # for regular files
                     for file in files:
                         imagefilepath = os.path.join(dir_path, file)
@@ -353,38 +358,80 @@ class CountImages(object):
                 #os.makedirs(os.path.join("/home/orion/datasets/iMaterialist_data_new/data/train_images_done", dir))
                 # copy converted directory to new location
                 shutil.copytree(os.path.join(file_path, dir),
-                                os.path.join("/home/orion/datasets/iMaterialist_data_new/data/train_images_done", dir))
+                                os.path.join("/media/orion/306820f3-b14d-4713-9670-5ec03229fcd1/datasets/iMaterialist_last/data/train_images_done", dir))
+
+
+
+    def convert_class_42_to_gs(self, file_path):
+
+        for root, dirs, files in os.walk(file_path):
+
+            # for regular files
+            for file in files:
+                imagefilepath = os.path.join(root, file)
+                print(imagefilepath)
+                color = cv2.imread(imagefilepath)
+                # If opencv doesnt works due to unusual image file extension try other library (google check)
+
+                if color is None:
+                    continue
+                elif int(color.size) > 100:
+                    img = cv2.cvtColor(color.copy(), cv2.COLOR_BGR2RGB)
+
+                new_file_name = file.split('.')[0] + '_gs' + '.jpeg'
+                outputpath = os.path.join(root, new_file_name)
+                print(outputpath)
+                print(new_file_name)
+
+                im_gray = Image.fromarray(cv2.cvtColor(img.copy(), cv2.COLOR_RGB2GRAY))
+
+                print(type(im_gray))
+                pix = np.array(im_gray)
+                print(pix)
+                print(pix.ndim)
+                print(pix.shape)
+                print(pix.shape[0])
+                print(pix.shape[1])
+                im_new = Image.fromarray(pix)
+                print(im_new)
+                im_gray_size = ImageOps.fit(im_new.copy(), (64, 64), Image.ANTIALIAS)
+                im_gray_size.save(outputpath)
+
 
 
 def main():
     obj = CountImages()
 
-    file_path = "/home/orion/datasets/iMaterialist_data_new/data/train_images"
+    '''
+    #file_path = "/home/orion/datasets/iMaterialist_data_new/data/train_images"
+    file_path ="/media/orion/306820f3-b14d-4713-9670-5ec03229fcd1/datasets/iMaterialist_last/data/train_images"
 
     # (1) count number of images in each class
-    #file_counter, class_samples, max_samples, max_samples_class, min_samples, min_samples_class = \
-    #    obj.count_images_in_each_folder("/home/orion/datasets/iMaterialist_data_new/data/train_images")
+    file_counter, class_samples, max_samples, max_samples_class, min_samples, min_samples_class = \
+        obj.count_images_in_each_folder("/media/orion/306820f3-b14d-4713-9670-5ec03229fcd1/datasets/iMaterialist_last/data/train_images")
 
-    #print(max_samples, max_samples_class, min_samples, min_samples_class)
+    print(max_samples, max_samples_class, min_samples, min_samples_class)
     # 3898 42 320 83
 
-    # (2) check if downloaded images are valid or not
-    # checkFile = ImageValid()
-    # checkFile.check_if_image_is_valid("/home/orion/datasets/iMaterialist_data_new/data/train_images/")
+    #(2) check if downloaded images are valid or not
+    checkFile = ImageValid()
+    checkFile.check_if_image_is_valid("/media/orion/306820f3-b14d-4713-9670-5ec03229fcd1/datasets/iMaterialist_last/data/train_images")
     # Total images 185264
 
     # TODO This is done, no need to repeat
     # (3) add labels in front of each image file
-    #rename = FileRename()
-    #rename.rename_files_to_add_labels("/home/orion/datasets/iMaterialist_data_new/data/train_images/")
+    rename = FileRename()
+    rename.rename_files_to_add_labels("/media/orion/306820f3-b14d-4713-9670-5ec03229fcd1/datasets/iMaterialist_last/data/train_images")
 
     # (4) Cut images and replicate the imbalance samples
-
-    file_counter = pd.DataFrame()
-
     file_counter = pd.read_csv(os.path.join(file_path, 'class_samples.csv'), index_col=False)
-
     obj.balance_datasets(file_path, file_counter)
+    '''
+
+    # (5) missed folder 42, need to re-do it
+    file_path = '/media/orion/306820f3-b14d-4713-9670-5ec03229fcd1/datasets/iMaterialist_last/data/train_images/42'
+    obj.convert_class_42_to_gs(file_path)
+
 
     sys.exit()
 
